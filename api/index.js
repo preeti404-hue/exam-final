@@ -68,7 +68,7 @@ app.post("/bfhl", async (req, res) => {
 
       // call Gemini API
       const resp = await axios.post(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
         {
           contents: [{ parts: [{ text: question }] }],
         },
@@ -105,3 +105,4 @@ app.get("/health", (req, res) => {
 });
 
 module.exports=app;
+
