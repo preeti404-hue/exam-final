@@ -9,9 +9,8 @@ app.use(bodyParser.json());
 const MY_EMAIL = process.env.MY_EMAIL;
 const GEMINI_KEY = process.env.GEMINI_KEY;
 
+// ================= helper functions =================
 
-
-// helper functions
 function fibSeries(n) {
   let arr = [0, 1];
   for (let i = 2; i < n; i++) {
@@ -40,48 +39,56 @@ function lcmArr(arr) {
   return arr.reduce((acc, val) => (acc * val) / gcd(acc, val));
 }
 
-// routes
+// ================= routes =================
+
 app.post("/bfhl", async (req, res) => {
   try {
     let data;
 
     if (req.body.fibonacci) {
-      let n = parseInt(req.body.fibonacci);
+      const n = parseInt(req.body.fibonacci);
       if (!n || n <= 0) {
         return res.status(400).json({ is_success: false, error: "bad input" });
       }
       data = fibSeries(n);
+
     } else if (req.body.prime) {
-      let arr = req.body.prime;
+      const arr = req.body.prime;
       if (!Array.isArray(arr)) {
         return res.status(400).json({ is_success: false, error: "bad input" });
       }
       data = arr.filter(checkPrime);
-    } else if (req.body.lcm) {
-      let arr = req.body.lcm;
-      data = lcmArr(arr);
-    } else if (req.body.hcf) {
-      let arr = req.body.hcf;
-      data = hcfArr(arr);
-    } else if (req.body.AI) {
-      let question = req.body.AI;
 
-      // call Gemini API
+    } else if (req.body.lcm) {
+      data = lcmArr(req.body.lcm);
+
+    } else if (req.body.hcf) {
+      data = hcfArr(req.body.hcf);
+
+    } else if (req.body.AI) {
+      const question = req.body.AI;
+
       const resp = await axios.post(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
         {
-          contents: [{ parts: [{ text: question }] }],
+          contents: [
+            {
+              parts: [{ text: question }]
+            }
+          ]
         },
         {
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${GEMINI_KEY}`,
-          },
+            "Content-Type": "application/json"
+          }
         }
       );
 
-      let answer = resp.data?.candidates?.[0]?.content?.parts?.[0]?.text || "Unknown";
-      data = answer.split(" ")[0]; // just first word
+      const answer =
+        resp.data?.candidates?.[0]?.content?.parts?.[0]?.text || "Unknown";
+
+      data = answer.split(" ")[0];
+
     } else {
       return res.status(400).json({ is_success: false, error: "no valid key" });
     }
@@ -89,10 +96,11 @@ app.post("/bfhl", async (req, res) => {
     res.json({
       is_success: true,
       official_email: MY_EMAIL,
-      data: data,
+      data: data
     });
+
   } catch (err) {
-    console.log(err);
+    console.error(err.response?.data || err.message);
     res.status(500).json({ is_success: false, error: "server error" });
   }
 });
@@ -100,9 +108,8 @@ app.post("/bfhl", async (req, res) => {
 app.get("/health", (req, res) => {
   res.json({
     is_success: true,
-    official_email: MY_EMAIL,
+    official_email: MY_EMAIL
   });
 });
 
-module.exports=app;
-
+module.exports = app;
